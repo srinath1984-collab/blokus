@@ -3,34 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blokus Game</title>
+    <title>My Games Portal</title>
     <style>
-        html, body {
-            height: 100%;
+        body {
+            font-family: Arial, sans-serif;
+            background: #f6f8fb;
             margin: 0;
             padding: 0;
-            background: #f2f2f2;
         }
-        .iframe-container {
-            width: 100vw;
-            height: 100vh;
-            border: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        iframe {
-            border: none;
-            width: 90vw;
-            height: 90vh;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+        .container {
+            max-width: 500px;
+            margin: 80px auto;
             background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.09);
+            padding: 36px 28px;
+            text-align: center;
+        }
+        h1 {
+            color: #2251a2;
+            margin-bottom: 16px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin: 18px 0;
+        }
+        a {
+            text-decoration: none;
+            color: #fff;
+            background: #2251a2;
+            padding: 12px 28px;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        a:hover {
+            background: #2d6cdf;
+        }
+        .footer {
+            margin-top: 40px;
+            color: #888;
+            font-size: 0.95rem;
         }
     </style>
 </head>
 <body>
-    <div class="iframe-container">
-        <iframe src="blokus-game-frontend.html" title="Blokus Game"></iframe>
+    <div class="container">
+        <h1>Welcome to My Games Portal</h1>
+        <p>Select a game to play:</p>
+        <ul>
+            <li><a href="blokus-game-frontend.html">Play Blokus Game</a></li>
+            <!-- Add more games/pages below as you build them -->
+            <!-- <li><a href="another-game.html">Another Game</a></li> -->
+        </ul>
+        <div class="footer">
+            &copy; 2025 Your Name
+        </div>
     </div>
 </body>
 </html>
