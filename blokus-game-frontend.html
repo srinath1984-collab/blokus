@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blokus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --board-size: 20;
+            --cell-size: min(3.5vh, 3.5vw, 30px);
+            --grid-size: calc(var(--board-size) * var(--cell-size));
+            --blue-player: #3b82f6;
+            --red-player: #ef4444;
+            --preview-valid: rgba(0, 255, 0, 0.5);
+            --preview-invalid: rgba(255, 0, 0, 0.5);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: none;
+        }
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(var(--board-size), 1fr);
+            width: var(--grid-size);
+            height: var(--grid-size);
+            border: 2px solid #374151;
+            background-color: #f3f4f6;
+        }
+        .cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            border: 1px solid #d1d5db;
+            box-sizing: border-box;
+        }
+        .cell.blue { background-color: var(--blue-player); }
+        .cell.red { background-color: var(--red-player); }
+        .piece-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 1rem;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .piece {
+            display: grid;
+            cursor: pointer;
+            border: 2px solid transparent;
+            padding: 4px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .piece.selected {
+            border-color: #fbbf24;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.7);
+        }
+        .piece-cell {
+            width: 15px;
+            height: 15px;
+        }
+        #piece-preview {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0.7;
+            z-index: 100;
+        }
+        #message-box {
+            transition: opacity 0.5s, transform 0.5s;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div id="game-container" class="grid lg:grid-cols-[2fr_1fr] gap-8 w-full max-w-7xl">
+        
+        <!-- Game Board and Info -->
+        <div class="flex flex-col items-center">
+            <h1 class="text-4xl font-bold mb-4 text-gray-700">Blokus</h1>
+            <div class="flex justify-around w-full mb-4 text-center">
+                <div>
+                    <h2 class="text-xl font-semibold text-blue-600">Player (Blue)</h2>
+                    <p class="text-2xl font-bold" id="player-score">0</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold text-red-600">Agent (Red)</h2>
+                    <p class="text-2xl font-bold" id="agent-score">0</p>
+                </div>
+            </div>
+            <div id="game-board"></div>
+            <div class="mt-4 text-sm text-gray-500">
+                <p>Controls: <span class="font-semibold">'R'</span> to rotate, <span class="font-semibold">'F'</span> to flip. Click to place.</p>
+            </div>
+        </div>
+
+        <!-- Player's Pieces -->
+        <div class="flex flex-col bg-white p-6 rounded-xl shadow-lg">
+            <h3 class="text-2xl font-bold mb-4 text-center">Your Pieces</h3>
+            <div id="player-pieces" class="piece-container p-2 bg-gray-50 rounded-lg">
+                <!-- Pieces will be generated here by JS -->
+            </div>
+             <div class="mt-4 flex flex-col space-y-2">
+                <button id="pass-turn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition">Pass Turn</button>
+                <button id="reset-game" class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg transition">New Game</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Piece Preview Element -->
+    <div id="piece-preview"></div>
+
+    <!-- Message Box -->
+    <div id="message-box" class="fixed top-5 right-5 bg-green-500 text-white py-3 px-6 rounded-lg shadow-xl opacity-0 translate-y-10">
+        <p id="message-text"></p>
+    </div>
+
+
+    <script>
+        // --- GAME SETUP AND CONSTANTS ---
+        const BOARD_SIZE = 20;
+        const PLAYER_COLOR = 'blue';
+        const AGENT_COLOR = 'red';
+
+        // All 21 unique Blokus pieces (polyominoes)
+        // Each piece is represented by a set of coordinates relative to an anchor point (0,0)
+        const PIECES = {
+            'I1': [[0,0]],
+            'I2': [[0,0], [0,1]],
+            'I3': [[0,0], [0,1], [0,2]],
+            'I4': [[0,0], [0,1], [0,2], [0,3]],
+            'I5': [[0,0], [0,1], [0,2], [0,3], [0,4]],
+            'V3': [[0,0], [0,1], [1,1]],
+            'L4': [[0,0], [0,1], [0,2], [1,2]],
+            'Z4': [[0,0], [1,0], [1,1], [2,1]],
+            'O4': [[0,0], [0,1], [1,0], [1,1]],
+            'L5': [[0,0], [0,1], [0,2], [0,3], [1,3]],
+            'T5': [[0,0], [1,0], [2,0], [1,1], [1,2]],
+            'V5': [[0,0], [0,1], [0,2], [1,2], [2,2]],
+            'N5': [[0,1], [1,1], [2,1], [2,0], [3,0]],
+            'Z5': [[0,0], [1,0], [1,1], [1,2], [2,2]],
+            'T4': [[0,0], [1,0], [2,0], [1,1]],
+            'P5': [[0,0], [0,1], [1,0], [1,1], [0,2]],
+            'W5': [[0,0], [0,1], [1,1], [1,2], [2,2]],
+            'U5': [[0,0], [0,2], [1,0], [1,1], [1,2]],
+            'F5': [[1,0], [0,1], [1,1], [2,1], [1,2]],
+            'X5': [[1,0], [0,1], [1,1], [2,1], [1,2]],
+            'Y5': [[0,1], [1,0], [1,1], [1,2], [1,3]]
+        };
+
+        // --- DOM ELEMENTS ---
+        const gameBoardEl = document.getElementById('game-board');
+        const playerPiecesEl = document.getElementById('player-pieces');
+        const piecePreviewEl = document.getElementById('piece-preview');
+        const playerScoreEl = document.getElementById('player-score');
+        const agentScoreEl = document.getElementById('agent-score');
+        const passTurnBtn = document.getElementById('pass-turn');
+        const resetGameBtn = document.getElementById('reset-game');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+
+        // --- GAME STATE ---
+        let board = [];
+        let playerPieces = {};
+        let agentPieces = {};
+        let selectedPiece = null;
+        let selectedPieceName = null;
+        let currentPlayer = PLAYER_COLOR;
+        let playerFirstMove = true;
+        let agentFirstMove = true;
+        let playerPassed = false;
+        let agentPassed = false;
+
+        // --- CORE GAME LOGIC ---
+
+        function initializeGame() {
+            // Reset game state
+            board = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(null));
+            playerPieces = JSON.parse(JSON.stringify(PIECES));
+            agentPieces = JSON.parse(JSON.stringify(PIECES));
+            selectedPiece = null;
+            selectedPieceName = null;
+            currentPlayer = PLAYER_COLOR;
+            playerFirstMove = true;
+            agentFirstMove = true;
+            playerPassed = false;
+            agentPassed = false;
+
+            // Create board UI
+            gameBoardEl.innerHTML = '';
+            for (let i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.row = Math.floor(i / BOARD_SIZE);
+                cell.dataset.col = i % BOARD_SIZE;
+                gameBoardEl.appendChild(cell);
+            }
+
+            // Render pieces
+            renderPlayerPieces();
+            updateScores();
+            
+            showMessage("New game started! Player's turn.", 'info');
+        }
+
+        function renderPlayerPieces() {
+            playerPiecesEl.innerHTML = '';
+            for (const name in playerPieces) {
+                const piece = playerPieces[name];
+                const pieceEl = createPieceElement(piece, name, PLAYER_COLOR);
+                pieceEl.addEventListener('click', () => selectPiece(piece, name));
+                playerPiecesEl.appendChild(pieceEl);
+            }
+        }
+
+        function createPieceElement(piece, name, color) {
+            const pieceEl = document.createElement('div');
+            pieceEl.classList.add('piece');
+            pieceEl.dataset.name = name;
+            
+            const minRow = Math.min(...piece.map(p => p[0]));
+            const maxRow = Math.max(...piece.map(p => p[0]));
+            const minCol = Math.min(...piece.map(p => p[1]));
+            const maxCol = Math.max(...piece.map(p => p[1]));
+
+            pieceEl.style.gridTemplateRows = `repeat(${maxRow - minRow + 1}, 1fr)`;
+            pieceEl.style.gridTemplateColumns = `repeat(${maxCol - minCol + 1}, 1fr)`;
+            
+            const cells = Array(maxRow - minRow + 1).fill(0).map(() => Array(maxCol - minCol + 1).fill(0));
+            piece.forEach(([r, c]) => {
+                cells[r - minRow][c - minCol] = 1;
+            });
+
+            cells.forEach(row => {
+                row.forEach(cell => {
+                    const cellEl = document.createElement('div');
+                    cellEl.classList.add('piece-cell');
+                    if (cell) {
+                        cellEl.style.backgroundColor = color === PLAYER_COLOR ? 'var(--blue-player)' : 'var(--red-player)';
+                    }
+                    pieceEl.appendChild(cellEl);
+                });
+            });
+
+            return pieceEl;
+        }
+
+        function selectPiece(piece, name) {
+            if (currentPlayer !== PLAYER_COLOR) return;
+            
+            // Deselect if clicking the same piece
+            if (selectedPieceName === name) {
+                selectedPiece = null;
+                selectedPieceName = null;
+                updateSelectedPieceUI();
+                return;
+            }
+
+            selectedPiece = JSON.parse(JSON.stringify(piece));
+            selectedPieceName = name;
+            updateSelectedPieceUI();
+        }
+        
+        function updateSelectedPieceUI() {
+            document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
+            if (selectedPieceName) {
+                const pieceEl = document.querySelector(`.piece[data-name='${selectedPieceName}']`);
+                if(pieceEl) pieceEl.classList.add('selected');
+            }
+        }
+
+        function placePiece(row, col) {
+            if (!selectedPiece || currentPlayer !== PLAYER_COLOR) return;
+
+            if (isValidPlacement(selectedPiece, row, col, PLAYER_COLOR)) {
+                selectedPiece.forEach(([r, c]) => {
+                    board[row + r][col + c] = PLAYER_COLOR;
+                });
+                
+                delete playerPieces[selectedPieceName];
+                playerFirstMove = false;
+                playerPassed = false;
+                
+                selectedPiece = null;
+                selectedPieceName = null;
+                
+                drawBoard();
+                renderPlayerPieces();
+                updateScores();
+                
+                switchTurn();
+            } else {
+                showMessage("Invalid placement!", 'error');
+            }
+        }
+
+        function isValidPlacement(piece, row, col, color) {
+            let touchesCorner = false;
+            const isFirstMove = color === PLAYER_COLOR ? playerFirstMove : agentFirstMove;
+
+            for (const [r, c] of piece) {
+                const newRow = row + r;
+                const newCol = col + c;
+
+                // 1. Check bounds
+                if (newRow < 0 || newRow >= BOARD_SIZE || newCol < 0 || newCol >= BOARD_SIZE) {
+                    return false;
+                }
+
+                // 2. Check for overlap
+                if (board[newRow][newCol]) {
+                    return false;
+                }
+
+                // 3. Check for adjacent same-color pieces (edge-to-edge)
+                // Check Up, Down, Left, Right
+                const neighbors = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                for (const [dr, dc] of neighbors) {
+                    const adjRow = newRow + dr;
+                    const adjCol = newCol + dc;
+                    if (adjRow >= 0 && adjRow < BOARD_SIZE && adjCol >= 0 && adjCol < BOARD_SIZE) {
+                        if (board[adjRow][adjCol] === color) {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            // 4. Check for corner connection
+            // Check Diagonals
+            for (const [r, c] of piece) {
+                const newRow = row + r;
+                const newCol = col + c;
+                const diagonals = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+                for (const [dr, dc] of diagonals) {
+                    const diagRow = newRow + dr;
+                    const diagCol = newCol + dc;
+                    if (diagRow >= 0 && diagRow < BOARD_SIZE && diagCol >= 0 && diagCol < BOARD_SIZE) {
+                        if (board[diagRow][diagCol] === color) {
+                            touchesCorner = true;
+                        }
+                    }
+                }
+            }
+
+            // 5. First move must touch a corner of the board
+            if (isFirstMove) {
+                const corners = {
+                    [PLAYER_COLOR]: [[0, 0]],
+                    [AGENT_COLOR]: [[BOARD_SIZE - 1, BOARD_SIZE - 1]]
+                };
+                let firstMoveValid = false;
+                for (const [r, c] of piece) {
+                    if (corners[color].some(([cr, cc]) => row + r === cr && col + c === cc)) {
+                        firstMoveValid = true;
+                        break;
+                    }
+                }
+                return firstMoveValid;
+            }
+
+            return touchesCorner;
+        }
+
+        function drawBoard() {
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    const cell = gameBoardEl.children[r * BOARD_SIZE + c];
+                    cell.className = 'cell'; // Reset classes
+                    if (board[r][c]) {
+                        cell.classList.add(board[r][c]);
+                    }
+                }
+            }
+        }
+        
+        function updateScores() {
+            const playerScore = Object.values(playerPieces).flat().length;
+            const agentScore = Object.values(agentPieces).flat().length;
+            playerScoreEl.textContent = 89 - playerScore;
+            agentScoreEl.textContent = 89 - agentScore;
+        }
+        
+        function switchTurn() {
+            if (currentPlayer === PLAYER_COLOR) {
+                currentPlayer = AGENT_COLOR;
+                showMessage("Agent's turn...", 'info');
+                // Use a timeout to simulate the agent "thinking"
+                setTimeout(runAgentTurn, 500);
+            } else {
+                currentPlayer = PLAYER_COLOR;
+                showMessage("Player's turn.", 'info');
+            }
+            checkGameOver();
+        }
+
+        // --- AGENT LOGIC (PLACEHOLDER) ---
+        
+        async function runAgentTurn() {
+            // ===================================================================
+            // == THIS IS WHERE YOU WILL CALL YOUR C++ WEBASSEMBLY AGENT ==
+            // ===================================================================
+            //
+            // 1. You'll need to pass the current game state to your C++ function.
+            //    This includes the board state, available agent pieces, and first move status.
+            //    A common way is to pass the board as a flat array of numbers (0=empty, 1=player, 2=agent).
+            //
+            // 2. Your C++ agent will compute the best move and return it.
+            //    The return value should describe the piece to play, its orientation (rotation/flip),
+            //    and the (row, col) coordinates to place it.
+            //    Example return object: { pieceName: 'L5', piece: [[...]], row: 15, col: 15 }
+            //
+            // 3. If the agent cannot make a move, it should return a "pass" signal.
+            
+            // --- Placeholder Agent Logic (Finds the first valid move) ---
+            const agentMove = findFirstValidMoveForAgent();
+            
+            if (agentMove) {
+                const { piece, pieceName, row, col } = agentMove;
+                // Place the piece
+                piece.forEach(([r, c]) => {
+                    board[row + r][col + c] = AGENT_COLOR;
+                });
+                delete agentPieces[pieceName];
+                agentFirstMove = false;
+                agentPassed = false;
+                showMessage(`Agent placed piece ${pieceName}.`, 'success');
+            } else {
+                // Agent passes
+                agentPassed = true;
+                showMessage("Agent passes.", 'warning');
+            }
+
+            drawBoard();
+            updateScores();
+            switchTurn();
+        }
+        
+        // This is a simple placeholder. Your C++ agent will replace this.
+        function findFirstValidMoveForAgent() {
+            for (const pieceName in agentPieces) {
+                let piece = agentPieces[pieceName];
+                // Try all 8 orientations (4 rotations, 2 flips)
+                for (let flip = 0; flip < 2; flip++) {
+                    for (let rot = 0; rot < 4; rot++) {
+                        // Try every position on the board
+                        for (let r = 0; r < BOARD_SIZE; r++) {
+                            for (let c = 0; c < BOARD_SIZE; c++) {
+                                if (isValidPlacement(piece, r, c, AGENT_COLOR)) {
+                                    return { piece, pieceName, row: r, col: c };
+                                }
+                            }
+                        }
+                        piece = rotatePiece(piece);
+                    }
+                    piece = flipPiece(piece);
+                }
+            }
+            return null; // No valid move found
+        }
+
+
+        // --- PIECE MANIPULATION ---
+
+        function rotatePiece(piece) {
+            // Rotate 90 degrees clockwise: (x, y) -> (y, -x)
+            const maxCol = Math.max(...piece.map(p => p[1]));
+            return piece.map(([r, c]) => [c, maxCol - r]);
+        }
+
+        function flipPiece(piece) {
+            // Flip horizontally: (x, y) -> (x, -y)
+            const maxCol = Math.max(...piece.map(p => p[1]));
+            return piece.map(([r, c]) => [r, maxCol - c]);
+        }
+
+        // --- UI AND EVENT HANDLERS ---
+        
+        function updatePreview(e) {
+            if (!selectedPiece || currentPlayer !== PLAYER_COLOR) {
+                piecePreviewEl.style.display = 'none';
+                return;
+            }
+
+            const boardRect = gameBoardEl.getBoundingClientRect();
+            const cellSize = boardRect.width / BOARD_SIZE;
+            
+            // Get mouse position relative to the board
+            const x = e.clientX - boardRect.left;
+            const y = e.clientY - boardRect.top;
+
+            // Snap to grid
+            const col = Math.floor(x / cellSize);
+            const row = Math.floor(y / cellSize);
+
+            piecePreviewEl.innerHTML = '';
+            piecePreviewEl.style.display = 'block';
+            piecePreviewEl.style.left = `${boardRect.left + col * cellSize}px`;
+            piecePreviewEl.style.top = `${boardRect.top + row * cellSize}px`;
+
+            const isValid = isValidPlacement(selectedPiece, row, col, PLAYER_COLOR);
+            
+            selectedPiece.forEach(([r, c]) => {
+                const cell = document.createElement('div');
+                cell.style.position = 'absolute';
+                cell.style.width = `${cellSize}px`;
+                cell.style.height = `${cellSize}px`;
+                cell.style.left = `${c * cellSize}px`;
+                cell.style.top = `${r * cellSize}px`;
+                cell.style.backgroundColor = isValid ? 'var(--preview-valid)' : 'var(--preview-invalid)';
+                cell.style.border = '1px solid rgba(0,0,0,0.2)';
+                piecePreviewEl.appendChild(cell);
+            });
+        }
+        
+        function handleBoardClick(e) {
+            if (currentPlayer !== PLAYER_COLOR) return;
+            const boardRect = gameBoardEl.getBoundingClientRect();
+            const cellSize = boardRect.width / BOARD_SIZE;
+            const x = e.clientX - boardRect.left;
+            const y = e.clientY - boardRect.top;
+            const col = Math.floor(x / cellSize);
+            const row = Math.floor(y / cellSize);
+            placePiece(row, col);
+        }
+        
+        function handleKeyPress(e) {
+            if (!selectedPiece) return;
+            if (e.key === 'r' || e.key === 'R') {
+                selectedPiece = rotatePiece(selectedPiece);
+            } else if (e.key === 'f' || e.key === 'F') {
+                selectedPiece = flipPiece(selectedPiece);
+            }
+            // We need a mouse event to update the preview position
+            // A bit of a hack, but create a fake event
+            const fakeEvent = { clientX: e.clientX || window.innerWidth/2, clientY: e.clientY || window.innerHeight/2 };
+            updatePreview(fakeEvent);
+        }
+        
+        function handlePassTurn() {
+            if (currentPlayer !== PLAYER_COLOR) return;
+            playerPassed = true;
+            showMessage("Player passes.", 'warning');
+            switchTurn();
+        }
+
+        function checkGameOver() {
+            const playerCanMove = Object.keys(playerPieces).length > 0;
+            const agentCanMove = Object.keys(agentPieces).length > 0;
+
+            if ((!playerCanMove && !agentCanMove) || (playerPassed && agentPassed)) {
+                let finalPlayerScore = 89 - Object.values(playerPieces).flat().length;
+                let finalAgentScore = 89 - Object.values(agentPieces).flat().length;
+                
+                if (Object.keys(playerPieces).length === 0) finalPlayerScore += 15;
+                if (Object.keys(agentPieces).length === 0) finalAgentScore += 15;
+
+                let message = `Game Over! Final Score: Player ${finalPlayerScore} - Agent ${finalAgentScore}.`;
+                if (finalPlayerScore > finalAgentScore) {
+                    message += " You win!";
+                } else if (finalAgentScore > finalPlayerScore) {
+                    message += " Agent wins.";
+                } else {
+                    message += " It's a tie!";
+                }
+                
+                showMessage(message, 'info', 5000);
+                currentPlayer = null; // Stop turns
+            }
+        }
+        
+        function showMessage(text, type = 'info', duration = 3000) {
+            messageText.textContent = text;
+            messageBox.className = 'fixed top-5 right-5 text-white py-3 px-6 rounded-lg shadow-xl opacity-0 translate-y-10'; // reset
+            
+            const colors = {
+                info: 'bg-blue-500',
+                success: 'bg-green-500',
+                warning: 'bg-yellow-500',
+                error: 'bg-red-500'
+            };
+            messageBox.classList.add(colors[type]);
+
+            messageBox.style.opacity = '1';
+            messageBox.style.transform = 'translateY(0)';
+
+            setTimeout(() => {
+                messageBox.style.opacity = '0';
+                messageBox.style.transform = 'translateY(10px)';
+            }, duration);
+        }
+
+        // --- INITIALIZE ---
+        document.addEventListener('DOMContentLoaded', initializeGame);
+        gameBoardEl.addEventListener('mousemove', updatePreview);
+        gameBoardEl.addEventListener('mouseleave', () => piecePreviewEl.style.display = 'none');
+        gameBoardEl.addEventListener('click', handleBoardClick);
+        document.addEventListener('keydown', handleKeyPress);
+        passTurnBtn.addEventListener('click', handlePassTurn);
+        resetGameBtn.addEventListener('click', initializeGame);
+
+    </script>
+</body>
+</html>
