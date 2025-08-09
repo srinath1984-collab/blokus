@@ -61,12 +61,12 @@
         max-height: 100%;
         background: none;
     }
-       .piece.selected .piece-cell {
-    outline: 2px solid #fbbf24;
-    outline-offset: -2px;
+ .piece.selected .piece-cell {
+    box-shadow: 0 0 0 2px #fbbf24;
+    z-index: 1;
 }
 .piece.selected .piece-cell:not([style*="background-color"]) {
-    outline: none;
+    box-shadow: none;
 }
         .piece-cell {
             width: var(--cell-size);
