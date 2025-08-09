@@ -37,10 +37,10 @@
         .cell.blue { background-color: var(--blue-player); }
         .cell.red { background-color: var(--red-player); }
 
-        /* --- PIECE CONTAINER GRID FIX --- */
+        /* --- PIECE CONTAINER FLEXIBLE GRID --- */
         .piece-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(0, max-content));
             gap: 10px;
             max-height: 80vh;
             width: 100%;
@@ -49,11 +49,7 @@
             align-items: start;
         }
         .piece {
-            width: 90px;
-            height: 90px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            /* No fixed width or height, let content size it */
             box-sizing: border-box;
         }
         .piece.selected .piece-cell {
