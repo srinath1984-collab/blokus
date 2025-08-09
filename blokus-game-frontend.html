@@ -218,49 +218,34 @@
             showMessage("New game started! Player's turn.", 'info');
         }
 
-        function renderPlayerPieces() {
-            playerPiecesEl.innerHTML = '';
-            for (const name in playerPieces) {
-                const piece = playerPieces[name];
-                const pieceEl = createPieceElement(piece, name, PLAYER_COLOR);
-                pieceEl.addEventListener('click', () => selectPiece(piece, name));
-                playerPiecesEl.appendChild(pieceEl);
-            }
-        }
+     function createPieceElement(piece, name, color) {
+    const pieceEl = document.createElement('div');
+    pieceEl.classList.add('piece');
+    pieceEl.dataset.name = name;
 
-        function createPieceElement(piece, name, color) {
-            const pieceEl = document.createElement('div');
-            pieceEl.classList.add('piece');
-            pieceEl.dataset.name = name;
-            
-            const minRow = Math.min(...piece.map(p => p[0]));
-            const maxRow = Math.max(...piece.map(p => p[0]));
-            const minCol = Math.min(...piece.map(p => p[1]));
-            const maxCol = Math.max(...piece.map(p => p[1]));
+    const minRow = Math.min(...piece.map(p => p[0]));
+    const maxRow = Math.max(...piece.map(p => p[0]));
+    const minCol = Math.min(...piece.map(p => p[1]));
+    const maxCol = Math.max(...piece.map(p => p[1]));
 
-       const cellSize = getComputedStyle(document.documentElement).getPropertyValue('--cell-size');
+    const cellSize = getComputedStyle(document.documentElement).getPropertyValue('--cell-size');
 
-pieceEl.style.gridTemplateRows = `repeat(${maxRow - minRow + 1}, minmax(${cellSize}, ${cellSize}))`;
-pieceEl.style.gridTemplateColumns = `repeat(${maxCol - minCol + 1}, minmax(${cellSize}, ${cellSize}))`;
-            
-            const cells = Array(maxRow - minRow + 1).fill(0).map(() => Array(maxCol - minCol + 1).fill(0));
-            piece.forEach(([r, c]) => {
-                cells[r - minRow][c - minCol] = 1;
-            });
+    pieceEl.style.display = 'grid';
+    pieceEl.style.gridTemplateRows = `repeat(${maxRow - minRow + 1}, minmax(${cellSize}, ${cellSize}))`;
+    pieceEl.style.gridTemplateColumns = `repeat(${maxCol - minCol + 1}, minmax(${cellSize}, ${cellSize}))`;
 
-            cells.forEach(row => {
-                row.forEach(cell => {
-                    const cellEl = document.createElement('div');
-                    cellEl.classList.add('piece-cell');
-                    if (cell) {
-                        cellEl.style.backgroundColor = color === PLAYER_COLOR ? 'var(--blue-player)' : 'var(--red-player)';
-                    }
-                    pieceEl.appendChild(cellEl);
-                });
-            });
+    piece.forEach(([r, c]) => {
+        const cellEl = document.createElement('div');
+        cellEl.classList.add('piece-cell');
+        cellEl.style.backgroundColor = color === PLAYER_COLOR ? 'var(--blue-player)' : 'var(--red-player)';
+        // Place cell in the correct grid position
+        cellEl.style.gridRow = (r - minRow + 1);
+        cellEl.style.gridColumn = (c - minCol + 1);
+        pieceEl.appendChild(cellEl);
+    });
 
-            return pieceEl;
-        }
+    return pieceEl;
+}
 
         function selectPiece(piece, name) {
             if (currentPlayer !== PLAYER_COLOR) return;
