@@ -38,7 +38,7 @@
         .cell.red { background-color: var(--red-player); }
         .piece-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(100px, max-content));
             gap: 1fr;
             max-height: 80vh;
             overflow-y: auto;
@@ -58,7 +58,7 @@
         .piece-cell {
             width: var(--cell-size);
             height: var(--cell-size);
-            border: 0px solid #d1d5db;
+            border: 1px solid #d1d5db;
             box-sizing: border-box;
         }
         #piece-preview {
