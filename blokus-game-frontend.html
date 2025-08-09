@@ -37,19 +37,18 @@
         .cell.blue { background-color: var(--blue-player); }
         .cell.red { background-color: var(--red-player); }
 
-        /* --- PIECE CONTAINER FLEXIBLE GRID --- */
+        /* --- PIECE CONTAINER FLEX WRAP --- */
         .piece-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(0, max-content));
+            display: flex;
+            flex-wrap: wrap;
             gap: 10px;
             max-height: 80vh;
             width: 100%;
             overflow-y: auto;
             overflow-x: hidden;
-            align-items: start;
+            align-items: flex-start;
         }
         .piece {
-            /* No fixed width or height, let content size it */
             box-sizing: border-box;
         }
         .piece.selected .piece-cell {
