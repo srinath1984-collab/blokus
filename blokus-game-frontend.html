@@ -50,6 +50,8 @@
             padding: 1px;
             border-radius: 1px;
             transition: all 0.2s;
+            box-sizing: border-box;
+            gap: 2px;
         }
         .piece.selected {
             border-color: #fbbf24;
@@ -225,8 +227,10 @@
             const minCol = Math.min(...piece.map(p => p[1]));
             const maxCol = Math.max(...piece.map(p => p[1]));
 
-            pieceEl.style.gridTemplateRows = `repeat(${maxRow - minRow + 1}, 1fr)`;
-            pieceEl.style.gridTemplateColumns = `repeat(${maxCol - minCol + 1}, 1fr)`;
+       const cellSize = getComputedStyle(document.documentElement).getPropertyValue('--cell-size');
+
+pieceEl.style.gridTemplateRows = `repeat(${maxRow - minRow + 1}, minmax(${cellSize}, ${cellSize}))`;
+pieceEl.style.gridTemplateColumns = `repeat(${maxCol - minCol + 1}, minmax(${cellSize}, ${cellSize}))`;
             
             const cells = Array(maxRow - minRow + 1).fill(0).map(() => Array(maxCol - minCol + 1).fill(0));
             piece.forEach(([r, c]) => {
