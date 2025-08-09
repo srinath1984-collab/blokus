@@ -39,7 +39,7 @@
 
 .piece-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
     gap: 10px;
     max-height: 80vh;
     width: 100%;
@@ -47,12 +47,13 @@
     overflow-x: hidden;
     align-items: start;
 }
-   .piece {
-    width: 100%;
-    height: auto;
-    max-width: 100%;
-    max-height: 100%;
-    box-sizing: border-box;
+.piece {
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Remove max-width/height if present */
 }
  .piece.selected .piece-cell {
     box-shadow: 0 0 0 2px #fbbf24;
@@ -211,23 +212,13 @@
             showMessage("New game started! Player's turn.", 'info');
         }
 
-        function renderPlayerPieces() {
+    function renderPlayerPieces() {
     playerPiecesEl.innerHTML = '';
     for (const name in playerPieces) {
         const piece = playerPieces[name];
         const pieceEl = createPieceElement(piece, name, PLAYER_COLOR);
         pieceEl.addEventListener('click', () => selectPiece(piece, name));
-        
-        // Create a fixed-size wrapper to prevent overlap
-        const wrapper = document.createElement('div');
-        wrapper.style.width = '90px';
-        wrapper.style.height = '90px';
-        wrapper.style.display = 'flex';
-        wrapper.style.alignItems = 'center';
-        wrapper.style.justifyContent = 'center';
-        wrapper.appendChild(pieceEl);
-
-        playerPiecesEl.appendChild(wrapper);
+        playerPiecesEl.appendChild(pieceEl);
     }
 }
 
