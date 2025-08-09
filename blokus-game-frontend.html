@@ -56,8 +56,10 @@
             box-shadow: 0 0 15px rgba(251, 191, 36, 0.7);
         }
         .piece-cell {
-            width: 15px;
-            height: 15px;
+            width: var(--cell-size);
+            height: var(--cell-size);
+            border: 1px solid #d1d5db;
+            box-sizing: border-box;
         }
         #piece-preview {
             position: absolute;
