@@ -37,31 +37,32 @@
         .cell.blue { background-color: var(--blue-player); }
         .cell.red { background-color: var(--red-player); }
 
-.piece-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-    gap: 10px;
-    max-height: 80vh;
-    width: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    align-items: start;
-}
-.piece {
-    width: 90px;
-    height: 90px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* Remove max-width/height if present */
-}
- .piece.selected .piece-cell {
-    box-shadow: 0 0 0 2px #fbbf24;
-    z-index: 1;
-}
-.piece.selected .piece-cell:not([style*="background-color"]) {
-    box-shadow: none;
-}
+        /* --- PIECE CONTAINER GRID FIX --- */
+        .piece-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 10px;
+            max-height: 80vh;
+            width: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            align-items: start;
+        }
+        .piece {
+            width: 90px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+        .piece.selected .piece-cell {
+            box-shadow: 0 0 0 2px #fbbf24;
+            z-index: 1;
+        }
+        .piece.selected .piece-cell:not([style*="background-color"]) {
+            box-shadow: none;
+        }
         .piece-cell {
             width: var(--cell-size);
             height: var(--cell-size);
@@ -212,44 +213,44 @@
             showMessage("New game started! Player's turn.", 'info');
         }
 
-    function renderPlayerPieces() {
-    playerPiecesEl.innerHTML = '';
-    for (const name in playerPieces) {
-        const piece = playerPieces[name];
-        const pieceEl = createPieceElement(piece, name, PLAYER_COLOR);
-        pieceEl.addEventListener('click', () => selectPiece(piece, name));
-        playerPiecesEl.appendChild(pieceEl);
-    }
-}
+        function renderPlayerPieces() {
+            playerPiecesEl.innerHTML = '';
+            for (const name in playerPieces) {
+                const piece = playerPieces[name];
+                const pieceEl = createPieceElement(piece, name, PLAYER_COLOR);
+                pieceEl.addEventListener('click', () => selectPiece(piece, name));
+                playerPiecesEl.appendChild(pieceEl);
+            }
+        }
 
-     function createPieceElement(piece, name, color) {
-    const pieceEl = document.createElement('div');
-    pieceEl.classList.add('piece');
-    pieceEl.dataset.name = name;
+        function createPieceElement(piece, name, color) {
+            const pieceEl = document.createElement('div');
+            pieceEl.classList.add('piece');
+            pieceEl.dataset.name = name;
 
-    const minRow = Math.min(...piece.map(p => p[0]));
-    const maxRow = Math.max(...piece.map(p => p[0]));
-    const minCol = Math.min(...piece.map(p => p[1]));
-    const maxCol = Math.max(...piece.map(p => p[1]));
+            const minRow = Math.min(...piece.map(p => p[0]));
+            const maxRow = Math.max(...piece.map(p => p[0]));
+            const minCol = Math.min(...piece.map(p => p[1]));
+            const maxCol = Math.max(...piece.map(p => p[1]));
 
-    const cellSize = getComputedStyle(document.documentElement).getPropertyValue('--cell-size');
+            const cellSize = getComputedStyle(document.documentElement).getPropertyValue('--cell-size');
 
-    pieceEl.style.display = 'grid';
-    pieceEl.style.gridTemplateRows = `repeat(${maxRow - minRow + 1}, minmax(${cellSize}, ${cellSize}))`;
-    pieceEl.style.gridTemplateColumns = `repeat(${maxCol - minCol + 1}, minmax(${cellSize}, ${cellSize}))`;
+            pieceEl.style.display = 'grid';
+            pieceEl.style.gridTemplateRows = `repeat(${maxRow - minRow + 1}, minmax(${cellSize}, ${cellSize}))`;
+            pieceEl.style.gridTemplateColumns = `repeat(${maxCol - minCol + 1}, minmax(${cellSize}, ${cellSize}))`;
 
-    piece.forEach(([r, c]) => {
-        const cellEl = document.createElement('div');
-        cellEl.classList.add('piece-cell');
-        cellEl.style.backgroundColor = color === PLAYER_COLOR ? 'var(--blue-player)' : 'var(--red-player)';
-        // Place cell in the correct grid position
-        cellEl.style.gridRow = (r - minRow + 1);
-        cellEl.style.gridColumn = (c - minCol + 1);
-        pieceEl.appendChild(cellEl);
-    });
+            piece.forEach(([r, c]) => {
+                const cellEl = document.createElement('div');
+                cellEl.classList.add('piece-cell');
+                cellEl.style.backgroundColor = color === PLAYER_COLOR ? 'var(--blue-player)' : 'var(--red-player)';
+                // Place cell in the correct grid position
+                cellEl.style.gridRow = (r - minRow + 1);
+                cellEl.style.gridColumn = (c - minCol + 1);
+                pieceEl.appendChild(cellEl);
+            });
 
-    return pieceEl;
-}
+            return pieceEl;
+        }
 
         function selectPiece(piece, name) {
             if (currentPlayer !== PLAYER_COLOR) return;
