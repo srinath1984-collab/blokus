@@ -37,30 +37,23 @@
         .cell.blue { background-color: var(--blue-player); }
         .cell.red { background-color: var(--red-player); }
 
- .piece-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-        gap: 10px;
-        max-height: 80vh;
-        max-width: 100%;
-        overflow-y: auto;
-        overflow-x: hidden;
-    }
-    .piece {
-        display: grid;
-        cursor: pointer;
-        border: solid transparent;
-        padding: 0;
-        border-radius: 2px;
-        transition: all 0.2s;
-        box-sizing: border-box;
-        /* Remove gap here for tight cells */
-        gap: 0;
-        /* Prevent overflow on large pieces */
-        max-width: 100%;
-        max-height: 100%;
-        background: none;
-    }
+.piece-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(0, 1fr));
+    gap: 10px;
+    max-height: 80vh;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    align-items: start;
+}
+   .piece {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    box-sizing: border-box;
+}
  .piece.selected .piece-cell {
     box-shadow: 0 0 0 2px #fbbf24;
     z-index: 1;
