@@ -211,6 +211,26 @@
             showMessage("New game started! Player's turn.", 'info');
         }
 
+        function renderPlayerPieces() {
+    playerPiecesEl.innerHTML = '';
+    for (const name in playerPieces) {
+        const piece = playerPieces[name];
+        const pieceEl = createPieceElement(piece, name, PLAYER_COLOR);
+        pieceEl.addEventListener('click', () => selectPiece(piece, name));
+        
+        // Create a fixed-size wrapper to prevent overlap
+        const wrapper = document.createElement('div');
+        wrapper.style.width = '90px';
+        wrapper.style.height = '90px';
+        wrapper.style.display = 'flex';
+        wrapper.style.alignItems = 'center';
+        wrapper.style.justifyContent = 'center';
+        wrapper.appendChild(pieceEl);
+
+        playerPiecesEl.appendChild(wrapper);
+    }
+}
+
      function createPieceElement(piece, name, color) {
     const pieceEl = document.createElement('div');
     pieceEl.classList.add('piece');
